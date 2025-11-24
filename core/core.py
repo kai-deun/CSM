@@ -8,9 +8,12 @@ by Iris
 '''
 
 def gaussjordan(matrix_a, matrix_b):
-    matrix_a = np.array(matrix_a, float)
-    matrix_b = np.array(matrix_b, float)
-    length = len(matrix_b)
+    try:
+        matrix_a = np.array(matrix_a, float)
+        matrix_b = np.array(matrix_b, float)
+        length = len(matrix_b)
+    except ValueError as err:
+        raise ValueError("Numbers only") from err
 
     # main loop from the algorithm
     for k in range(length):
@@ -38,8 +41,8 @@ def gaussjordan(matrix_a, matrix_b):
 
 def main():
     # sample TODO: remove later and implement unit testing
-    a = [[0, 2, 0, 1],
-         [2, 2, 3, 2],
+    a = [[12, 2, 0, 1],
+         [2, 0, 3, 2],
          [4, -3, 0, 1],
          [6, 1, -6, -5]]
 
