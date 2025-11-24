@@ -1,6 +1,6 @@
 # GAUSS-JORDAN ELIMINATION PROJECT
 
-**_Progress:_** ![Progress](https://progress-bar.xyz/2)
+**_Progress:_** ![Progress](https://progress-bar.xyz/30)
 
 An application to solve matrices through **Gauss-Jordan**
 Elimination Method of a Linear Equation with the integration
@@ -16,11 +16,11 @@ two application project, a **Python** and a **Java** version.
 
 ## INSTALLATION
 
-[]
+[TODO]
 
 ## ALGORITHM
 
-[]
+[TODO]
 
 ## REFERENCES
 
