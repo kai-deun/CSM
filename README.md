@@ -1,14 +1,14 @@
 # GAUSS-JORDAN ELIMINATION PROJECT
 
-**_Progress:_** ![Progress](https://progress-bar.xyz/30)
+**_Progress:_** ![Progress](https://progress-bar.xyz/31)
 
 An application to solve matrices through **Gauss-Jordan**
 Elimination Method of a Linear Equation with the integration
 of _Python_ programming language and importing a package called
-_NumPy_ for proper computing.
+_NumPy_ for proper computing and _PyInstaller_ for compiling the application.
 and by using an algorithm in solving the problem.
 <br></br>
-The project is currently in development, and it comes in
+The project is currently under development, and it comes in
 two application project, a **Python** and a **Java** version.
 
 ## WHAT IS GAUSS-JORDAN ELIMINATION
@@ -16,11 +16,12 @@ two application project, a **Python** and a **Java** version.
 
 ## INSTALLATION
 
-[TODO]
+* [use PyInstaller for compiling into .exe format]
+* [requirements.txt soon for dependencies]
 
 ## ALGORITHM
 
-[TODO]
+* [refer to mechtutor's code algorithm and step-by-step solving method]
 
 ## REFERENCES
 
