@@ -1,4 +1,4 @@
-# GAUSS-JORDAN ELIMINATION APPLICATION
+# GAUSS-JORDAN ELIMINATION PROJECT
 
 **_Progress:_** ![Progress](https://progress-bar.xyz/2)
 
