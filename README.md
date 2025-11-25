@@ -10,10 +10,15 @@ and by using an algorithm in solving the problem.
 <br></br>
 The project is currently under development, and it comes in
 two application project, a **Python** and a **Java** version.
+<br></br>
+**Current Assumptions:**
+
+* The algorithm can solve any sizes of **square matrix**
+* Only supports static algorithm for solving the problem
 
 ## WHAT IS GAUSS-JORDAN ELIMINATION
 
-*
+* Gauss-Jordan Elimination method...
 
 ## INSTALLATION
 
