@@ -18,7 +18,16 @@ two application project, a **Python** and a **Java** version.
 
 ## WHAT IS GAUSS-JORDAN ELIMINATION
 
-* Gauss-Jordan Elimination method...
+* Gauss-Jordan Elimination is a method of eliminating
+the unknown from all other equations rather than the
+subsequent ones.
+<br></br>
+And all rows are normalized by dividing them by their
+pivot elements resulting into an identity matrix
+rather than a triangular matrix.
+<br></br>
+Consequently,  it is not needed to do back substitution
+to get the solution.
 
 ## INSTALLATION
 
