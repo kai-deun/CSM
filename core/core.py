@@ -1,12 +1,16 @@
 import numpy as np
+from user_input import *
 
 
 '''
 The algorithm is originally and credited to "Murad Elarbi"
 Others such as gui and implementation of user inputs are made
 by Iris
+
+... add more documentation about the logic ...
 '''
 
+# MAIN ALGO
 def gaussjordan(matrix_a, matrix_b):
     try:
         matrix_a = np.array(matrix_a, float)
@@ -40,27 +44,13 @@ def gaussjordan(matrix_a, matrix_b):
     return matrix_b, matrix_a
 
 def main():
-    # sample
-    # a = [[12, 2, 0, 1],
-    #      [2, 0, 3, 2],
-    #      [4, -3, 0, 1],
-    #      [6, 1, -6, -5]]
-    #
-    # b = [0, -2, -7, 6]
+    A, n  = square_matrix()
+    b = vector(n)
 
-    a = [[12, 2, 0, 1, 5],
-         [2, 0, 3, 2, 0],
-         [4, -3, 0, 1, 8],
-         [6, 1, -6, -5, 9],
-         [6, 1, -6, -5, 70]]
-
-    b = [0, -2, -7, 6, 5]
-
-    X, A = gaussjordan(a, b)
+    X, A_mat = gaussjordan(A, b)
 
     print(f"Solution \n {X}")
-    print(f"Transformed Matrix[A] \n {A}")
+    # print(f"Transformed Matrix[A] \n {A_mat}")
 
-# TODO: implement user input
 if __name__ == "__main__":
     main()
