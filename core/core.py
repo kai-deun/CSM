@@ -49,8 +49,8 @@ def main():
 
     X, A_mat = gaussjordan(A, b)
 
-    print(f"Solution \n {X}")
-    # print(f"Transformed Matrix[A] \n {A_mat}")
+    print("Solution:")
+    print(" ".join(f"{val:.4f}" for val in X))
 
 if __name__ == "__main__":
     main()
