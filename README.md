@@ -1,6 +1,6 @@
 # GAUSS-JORDAN ELIMINATION PROJECT (Square matrix solver)
 
-**_Progress:_** ![Progress](https://progress-bar.xyz/35)
+**_Progress:_** ![Progress](https://progress-bar.xyz/40)
 
 An application to solve matrices through **Gauss-Jordan**
 Elimination Method of a Linear Equation with the integration
