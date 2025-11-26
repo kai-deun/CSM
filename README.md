@@ -1,4 +1,4 @@
-# GAUSS-JORDAN ELIMINATION PROJECT
+# GAUSS-JORDAN ELIMINATION PROJECT (Square matrix solver)
 
 **_Progress:_** ![Progress](https://progress-bar.xyz/35)
 
