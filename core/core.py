@@ -1,5 +1,6 @@
 import numpy as np
 from user_input import *
+from solution import *
 
 
 '''
@@ -47,6 +48,7 @@ def main():
     A, n  = square_matrix()
     b = vector(n)
 
+    # original gauss jordan function
     X, A_mat = gaussjordan(A, b)
 
     print("Solution:")
@@ -54,6 +56,22 @@ def main():
 
     print(A_mat)
 
-#TODO: create a way to display a step-by-step solution
+    # for step-by-step display
+    print("\nStep-by-step")
+    X_steps, A_mat_steps, steps = solutions(A, b, show=True)
+
+    # verify both solution
+    print(f"Original: {X}")
+    print(f"By steps: {X_steps}")
+
+    if np.allclose(X, X_steps, rtol=1e-8):
+        print("Solution correct!")
+    else:
+        print("Solution differ in numerical precision")
+
+    # Verify if solution correct
+    print("\nSolution verification")
+    check_soln(A, b, X)
+
 if __name__ == "__main__":
     main()

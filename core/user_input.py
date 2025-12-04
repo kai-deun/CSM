@@ -1,6 +1,7 @@
-# TODO: add comm
+# a function to get the user input and put it in an array
+# this function is for the coefficient matrix
 def square_matrix():
-    tooltip = "at least 2x2"
+    tooltip = "at least 3x3"
     while True:
         try:
             num = int(input(f"Enter the matrix size {tooltip}: "))
@@ -27,7 +28,8 @@ def square_matrix():
                 print("Invalid input, use numerics only.")
     return A, num
 
-# TODO: add comm
+# a function for the vector inputs
+# this function is for the constant matrix
 def vector(num):
     print(f"Enter vector (index {num})")
     while True:
