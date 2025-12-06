@@ -9,7 +9,6 @@ ctk.set_default_color_theme("blue")
 
 
 class GaussJordanSolver:
-
     @staticmethod
     def solve(matrix_a, matrix_b, show_steps=True):
         """
@@ -137,20 +136,90 @@ class GaussJordanSolver:
         }
 
 
-class ScrollableMatrixFrame(ctk.CTkScrollableFrame):
-    """Custom scrollable frame for matrix input with optimized performance"""
+class DoubleScrollableFrame(ctk.CTkFrame):
+    """Custom frame with both horizontal and vertical scrolling"""
 
-    def __init__(self, master, rows, cols, entry_width=70, entry_height=35, **kwargs):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+
+        # Create main container with scrollbars
+        self.canvas = ctk.CTkCanvas(self, highlightthickness=0)
+        self.v_scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
+        self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self.canvas.xview)
+        self.canvas.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
+
+        # Scrollable frame inside canvas
+        self.scrollable_frame = ctk.CTkFrame(self.canvas)
+
+        # Create window in canvas
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Configure grid
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.v_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # Bind events for resizing
+        self.scrollable_frame.bind("<Configure>", self._configure_scrollregion)
+        self.canvas.bind("<Configure>", self._configure_canvas_window)
+
+        # Bind mouse wheel events
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind_all("<Shift-MouseWheel>", self._on_shift_mousewheel)
+
+    def _configure_scrollregion(self, event=None):
+        """Configure scroll region when frame size changes"""
+        # Update scrollregion to encompass the scrollable frame
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _configure_canvas_window(self, event):
+        """Configure canvas window size"""
+        # Set canvas window to fit the scrollable frame width
+        self.canvas.itemconfig(self.canvas_window, width=max(event.width, self.scrollable_frame.winfo_reqwidth()))
+
+    def _on_mousewheel(self, event):
+        """Handle vertical scrolling with mouse wheel"""
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def _on_shift_mousewheel(self, event):
+        """Handle horizontal scrolling with shift + mouse wheel"""
+        self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
+
+
+class ScrollableMatrixInput(ctk.CTkFrame):
+    """Custom scrollable frame for matrix input with both horizontal and vertical scrolling"""
+
+    def __init__(self, master, rows, cols, entry_width=65, entry_height=30, **kwargs):
         super().__init__(master, **kwargs)
         self.rows = rows
         self.cols = cols
         self.entries = []
 
+        # Create double scrollable frame
+        self.scrollable_frame = DoubleScrollableFrame(self)
+        self.scrollable_frame.pack(fill="both", expand=True)
+
+        # Create inner container for entries
+        self.inner_frame = ctk.CTkFrame(self.scrollable_frame.scrollable_frame)
+        self.inner_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Calculate required width for all columns
+        self.entry_width = entry_width
+        self.entry_height = entry_height
+        self.total_width = cols * (entry_width + 2)  # +2 for padding
+
+        # Create a container that will force the width
+        self.entries_container = ctk.CTkFrame(self.inner_frame, width=self.total_width)
+        self.entries_container.pack(fill="y", expand=False)
+
         # Create grid of entries
         for i in range(rows):
             row_entries = []
-            row_frame = ctk.CTkFrame(self)
-            row_frame.grid(row=i, column=0, sticky="w", pady=2)
+            row_frame = ctk.CTkFrame(self.entries_container)
+            row_frame.pack(pady=1, anchor="w")
 
             for j in range(cols):
                 entry = ctk.CTkEntry(
@@ -160,10 +229,13 @@ class ScrollableMatrixFrame(ctk.CTkScrollableFrame):
                     placeholder_text=f"({i},{j})",
                     font=("Consolas", 11)
                 )
-                entry.grid(row=0, column=j, padx=2)
+                entry.pack(side="left", padx=1)
                 row_entries.append(entry)
 
             self.entries.append(row_entries)
+
+        # Force update of geometry
+        self.update_idletasks()
 
 
 class ScrollableMatrixDisplay(ctk.CTkScrollableFrame):
@@ -302,19 +374,6 @@ class GaussJordanApp(ctk.CTk):
         )
         self.create_btn.pack(side="left", padx=10, pady=20)
 
-        # Solve button
-        self.solve_btn = ctk.CTkButton(
-            control_frame,
-            text="Solve",
-            command=self.start_solve_thread,
-            fg_color="blue",
-            font=("Consolas", 14),
-            height=40,
-            width=120,
-            state="disabled"
-        )
-        self.solve_btn.pack(side="left", padx=10, pady=20)
-
         # Step-by-step button
         self.steps_btn = ctk.CTkButton(
             control_frame,
@@ -379,27 +438,6 @@ class GaussJordanApp(ctk.CTk):
         ctk.CTkLabel(welcome_frame, text="Professional Gauss-Jordan Solver",
                      font=("Consolas", 28, "bold")).pack(pady=40)
 
-        # Matrix size capabilities
-        '''
-        size_info = ctk.CTkFrame(welcome_frame)
-        size_info.pack(pady=20, fill="x", padx=100)
-
-        ctk.CTkLabel(size_info, text="Matrix Size Capabilities:",
-                     font=("Consolas", 18, "bold")).pack(pady=10)
-
-        capabilities = [
-            f"• Small matrices (2-8): Full step-by-step visualization",
-            f"• Medium matrices (9-12): Limited step recording",
-            f"• Large matrices (13-{self.max_matrix_size}): Final result only",
-            f"• Maximum supported: {self.max_matrix_size}×{self.max_matrix_size} system",
-            f"• Performance optimized for up to {self.max_matrix_size}×{self.max_matrix_size}"
-        ]
-
-        for capability in capabilities:
-            ctk.CTkLabel(size_info, text=capability,
-                         font=("Consolas", 14), justify="left").pack(pady=2, anchor="w")
-        '''
-
         # Instructions
         instructions_frame = ctk.CTkFrame(welcome_frame)
         instructions_frame.pack(pady=30, fill="x", padx=100)
@@ -411,99 +449,13 @@ class GaussJordanApp(ctk.CTk):
             "1. Enter matrix size between 2 and 20",
             "2. Click 'Create Matrix' to generate input fields",
             "3. Fill in coefficient matrix A and constant vector b",
-            "4. Click 'Solve' to compute solution",
+            "4. Click 'Solve System' to compute solution",
             "5. View step-by-step for small/medium matrices"
         ]
 
         for instruction in instructions:
             ctk.CTkLabel(instructions_frame, text=instruction,
                          font=("Consolas", 14)).pack(pady=5, anchor="w")
-
-        '''
-        # Performance tips
-        tips_frame = ctk.CTkFrame(welcome_frame)
-        tips_frame.pack(pady=30, fill="x", padx=100)
-
-        ctk.CTkLabel(tips_frame, text="Performance Tips:",
-                     font=("Consolas", 18, "bold")).pack(pady=10)
-
-        tips = [
-            "• For matrices > 12×12, step-by-step is disabled (too many steps)",
-            "• Solutions are computed efficiently using optimized numpy operations",
-            "• Verification checks solution accuracy automatically",
-            "• Use 0 for empty cells (they default to 0)"
-        ]
-
-        for tip in tips:
-            ctk.CTkLabel(tips_frame, text=tip,
-                         font=("Consolas", 14), justify="left").pack(pady=2, anchor="w")
-
-        # Quick start buttons
-        btn_frame = ctk.CTkFrame(welcome_frame)
-        btn_frame.pack(pady=40)
-
-        # Example buttons for different sizes
-        sizes = [("3×3 Example", 3), ("5×5 Example", 5), ("8×8 Example", 8), ("12×12 Example", 12)]
-
-        for text, size in sizes:
-            btn = ctk.CTkButton(
-                btn_frame,
-                text=text,
-                command=lambda s=size: self.load_example_size(s),
-                fg_color="orange",
-                font=("Consolas", 14),
-                height=40,
-                width=150
-            )
-            btn.pack(side="left", padx=10)
-
-    def load_example_size(self, size):
-        """Load example of specific size"""
-        self.matrix_size.set(size)
-        self.create_matrix()
-
-        # Fill with example values for common sizes
-        if size == 3:
-            # Classic 3x3 example
-            example_A = [[2, 1, -1],
-                         [-3, -1, 2],
-                         [-2, 1, 2]]
-            example_b = [8, -11, -3]
-            self.fill_example_values(example_A, example_b)
-
-        elif size == 4:
-            # 4x4 example
-            example_A = [[4, -1, 0, 3],
-                         [2, 5, -2, 1],
-                         [1, -1, 3, -2],
-                         [3, 2, -1, 4]]
-            example_b = [10, 8, 5, 12]
-            self.fill_example_values(example_A, example_b)
-
-        elif size == 5:
-            # 5x5 identity-like with small perturbations
-            example_A = [[1, 0.1, 0.2, 0.1, 0.3],
-                         [0.2, 1, 0.1, 0.2, 0.1],
-                         [0.1, 0.3, 1, 0.1, 0.2],
-                         [0.3, 0.1, 0.2, 1, 0.1],
-                         [0.2, 0.2, 0.1, 0.3, 1]]
-            example_b = [1.7, 1.6, 1.7, 1.7, 1.8]
-            self.fill_example_values(example_A, example_b)
-
-    def fill_example_values(self, matrix_A, vector_b):
-        """Fill the input fields with example values"""
-        size = len(vector_b)
-        for i in range(size):
-            for j in range(size):
-                if i < len(matrix_A) and j < len(matrix_A[i]):
-                    self.a_entries[i][j].delete(0, "end")
-                    self.a_entries[i][j].insert(0, str(matrix_A[i][j]))
-
-        for i in range(size):
-            if i < len(vector_b):
-                self.b_entries[i].delete(0, "end")
-                self.b_entries[i].insert(0, str(vector_b[i]))
-        '''
 
     def create_matrix(self):
         try:
@@ -516,15 +468,10 @@ class GaussJordanApp(ctk.CTk):
             for widget in self.main_frame.winfo_children():
                 widget.destroy()
 
-            # Create main container with scroll if needed
-            if size > 10:
-                # Use scrollable frames for large matrices
-                main_container = ctk.CTkScrollableFrame(self.main_frame, height=600)
-                main_container.pack(fill="both", expand=True, padx=10, pady=10)
-                content_frame = main_container
-            else:
-                content_frame = ctk.CTkFrame(self.main_frame)
-                content_frame.pack(fill="both", expand=True, padx=30, pady=30)
+            # Create main container with scroll
+            main_container = ctk.CTkScrollableFrame(self.main_frame)
+            main_container.pack(fill="both", expand=True, padx=10, pady=10)
+            content_frame = main_container
 
             # Title with size warning
             title_text = f"Enter {size}×{size} System"
@@ -537,68 +484,68 @@ class GaussJordanApp(ctk.CTk):
 
             # Matrix input area
             matrix_area = ctk.CTkFrame(content_frame)
-            matrix_area.pack(pady=20, fill="x")
+            matrix_area.pack(fill="both", expand=True, pady=20)
 
-            # Left: Matrix A with scroll if large
-            if size > 8:
-                a_container = ctk.CTkScrollableFrame(matrix_area, width=400, height=300)
-                a_container.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
-                a_frame = a_container
-            else:
-                a_frame = ctk.CTkFrame(matrix_area)
-                a_frame.grid(row=0, column=0, padx=20, pady=10)
+            # Configure matrix area grid
+            matrix_area.grid_columnconfigure(0, weight=3)
+            matrix_area.grid_columnconfigure(1, weight=0)
+            matrix_area.grid_columnconfigure(2, weight=1)
+            matrix_area.grid_rowconfigure(0, weight=1)
 
-            ctk.CTkLabel(a_frame, text="Matrix A",
+            # Left: Matrix A with double scrollable input
+            a_container = ctk.CTkFrame(matrix_area)
+            a_container.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+
+            ctk.CTkLabel(a_container, text="Matrix A",
                          font=("Consolas", 14, "bold")).pack(pady=5)
 
-            # Create A entries grid
+            # Create A entries grid using custom ScrollableMatrixInput
             self.a_entries = []
-            entry_width = 70 if size <= 10 else 60
-            entry_height = 35 if size <= 10 else 30
-            font_size = 12 if size <= 10 else 11
+            entry_width = 65
+            entry_height = 30
+            font_size = 11 if size > 10 else 12
 
-            for i in range(size):
-                row_frame = ctk.CTkFrame(a_frame)
-                row_frame.pack(pady=2)
-                row_entries = []
+            # Calculate required width for all columns
+            total_width_needed = size * (entry_width + 2) + 50  # Extra for padding
 
-                for j in range(size):
-                    entry = ctk.CTkEntry(
-                        row_frame,
-                        width=entry_width,
-                        height=entry_height,
-                        placeholder_text="0",
-                        font=("Consolas", font_size)
-                    )
-                    entry.pack(side="left", padx=2)
-                    row_entries.append(entry)
-                self.a_entries.append(row_entries)
+            self.a_input_frame = ScrollableMatrixInput(
+                a_container,
+                rows=size,
+                cols=size,
+                entry_width=entry_width,
+                entry_height=entry_height,
+                width=800,  # Fixed viewport width
+                height=400  # Fixed viewport height
+            )
+            self.a_input_frame.pack(fill="both", expand=True)
+            self.a_entries = self.a_input_frame.entries
+
+            # Force update to ensure scroll region is calculated
+            self.a_input_frame.update_idletasks()
 
             # Center: Symbols
             sym_frame = ctk.CTkFrame(matrix_area)
-            sym_frame.grid(row=0, column=1, padx=10, pady=10)
+            sym_frame.grid(row=0, column=1, padx=10, pady=10, sticky="ns")
 
             ctk.CTkLabel(sym_frame, text="×", font=("Consolas", 24)).pack(pady=15)
             ctk.CTkLabel(sym_frame, text="X", font=("Consolas", 24)).pack(pady=15)
             ctk.CTkLabel(sym_frame, text="=", font=("Consolas", 24)).pack(pady=15)
 
-            # Right: Vector b with scroll if large
-            if size > 12:
-                b_container = ctk.CTkScrollableFrame(matrix_area, width=200, height=300)
-                b_container.grid(row=0, column=2, padx=20, pady=10, sticky="nsew")
-                b_frame = b_container
-            else:
-                b_frame = ctk.CTkFrame(matrix_area)
-                b_frame.grid(row=0, column=2, padx=20, pady=10)
+            # Right: Vector b
+            b_container = ctk.CTkFrame(matrix_area)
+            b_container.grid(row=0, column=2, padx=20, pady=10, sticky="nsew")
 
-            ctk.CTkLabel(b_frame, text="Vector b",
+            ctk.CTkLabel(b_container, text="Vector b",
                          font=("Consolas", 14, "bold")).pack(pady=5)
 
-            # Create b entries
+            # Create b entries in a scrollable frame
             self.b_entries = []
+            b_scrollable = ctk.CTkScrollableFrame(b_container, width=200, height=400)
+            b_scrollable.pack(fill="both", expand=True)
+
             for i in range(size):
                 entry = ctk.CTkEntry(
-                    b_frame,
+                    b_scrollable,
                     width=entry_width,
                     height=entry_height,
                     placeholder_text=f"b{i + 1}",
@@ -611,9 +558,8 @@ class GaussJordanApp(ctk.CTk):
             btn_frame = ctk.CTkFrame(content_frame)
             btn_frame.pack(pady=30)
 
-            # Solve button
-            self.solve_btn.configure(state="normal")
-            solve_btn = ctk.CTkButton(
+            # Solve System button
+            self.solve_btn = ctk.CTkButton(
                 btn_frame,
                 text="Solve System",
                 command=self.start_solve_thread,
@@ -622,9 +568,9 @@ class GaussJordanApp(ctk.CTk):
                 height=40,
                 font=("Consolas", 14)
             )
-            solve_btn.pack(side="left", padx=15)
+            self.solve_btn.pack(side="left", padx=15)
 
-            # Random fill button (useful for testing large matrices)
+            # Random fill button
             random_btn = ctk.CTkButton(
                 btn_frame,
                 text="Fill Random",
@@ -895,7 +841,7 @@ class GaussJordanApp(ctk.CTk):
 
         # Steps button (only for smaller matrices)
         if size <= 12:
-            self.steps_btn = ctk.CTkButton(
+            steps_btn = ctk.CTkButton(
                 btn_frame,
                 text="View Step-by-Step",
                 command=self.show_steps_viewer,
@@ -904,7 +850,7 @@ class GaussJordanApp(ctk.CTk):
                 height=40,
                 font=("Consolas", 14)
             )
-            self.steps_btn.pack(side="left", padx=10)
+            steps_btn.pack(side="left", padx=10)
         else:
             # Info label for large matrices
             info_label = ctk.CTkLabel(
@@ -1222,7 +1168,6 @@ class GaussJordanApp(ctk.CTk):
         self.steps_data = []
         self.current_step = 0
         self.solution = None
-        self.solve_btn.configure(state="disabled")
         self.steps_btn.configure(state="disabled")
         self.status_label.configure(text="Ready", text_color="gray")
         self.perf_label.configure(text="")
