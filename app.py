@@ -142,17 +142,34 @@ class DoubleScrollableFrame(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
+        # Get theme colors
+        self.theme_bg = self._get_theme_color("bg")
+        self.theme_fg = self._get_theme_color("fg")
+
         # Create main container with scrollbars
-        self.canvas = ctk.CTkCanvas(self, highlightthickness=0)
+        self.canvas = ctk.CTkCanvas(
+            self,
+            highlightthickness=0,
+            bg=self.theme_bg  # Set canvas background to match theme
+        )
         self.v_scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
         self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self.canvas.xview)
-        self.canvas.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
+        self.canvas.configure(
+            yscrollcommand=self.v_scrollbar.set,
+            xscrollcommand=self.h_scrollbar.set,
+            bg=self.theme_bg  # Ensure canvas background is set
+        )
 
         # Scrollable frame inside canvas
-        self.scrollable_frame = ctk.CTkFrame(self.canvas)
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color=self.theme_fg)
 
         # Create window in canvas
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas_window = self.canvas.create_window(
+            (0, 0),
+            window=self.scrollable_frame,
+            anchor="nw",
+            tags="scrollable_frame"
+        )
 
         # Configure grid
         self.canvas.grid(row=0, column=0, sticky="nsew")
@@ -169,6 +186,16 @@ class DoubleScrollableFrame(ctk.CTkFrame):
         # Bind mouse wheel events
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.canvas.bind_all("<Shift-MouseWheel>", self._on_shift_mousewheel)
+
+        # Bind theme change event
+        self.bind("<<ThemeChanged>>", self._on_theme_changed)
+
+    def _get_theme_color(self, color_type="bg"):
+        """Get color based on current theme"""
+        if ctk.get_appearance_mode() == "Dark":
+            return "#2b2b2b" if color_type == "bg" else "#3a3a3a"
+        else:
+            return "#f0f0f0" if color_type == "bg" else "#ffffff"
 
     def _configure_scrollregion(self, event=None):
         """Configure scroll region when frame size changes"""
@@ -188,6 +215,16 @@ class DoubleScrollableFrame(ctk.CTkFrame):
         """Handle horizontal scrolling with shift + mouse wheel"""
         self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
 
+    def _on_theme_changed(self, event=None):
+        """Update colors when theme changes"""
+        # Update theme colors
+        self.theme_bg = self._get_theme_color("bg")
+        self.theme_fg = self._get_theme_color("fg")
+
+        # Update canvas and scrollable frame colors
+        self.canvas.configure(bg=self.theme_bg)
+        self.scrollable_frame.configure(fg_color=self.theme_fg)
+
 
 class ScrollableMatrixInput(ctk.CTkFrame):
     """Custom scrollable frame for matrix input with both horizontal and vertical scrolling"""
@@ -198,12 +235,16 @@ class ScrollableMatrixInput(ctk.CTkFrame):
         self.cols = cols
         self.entries = []
 
+        # Get theme colors
+        self.theme_bg = self._get_theme_color("bg")
+        self.theme_fg = self._get_theme_color("fg")
+
         # Create double scrollable frame
-        self.scrollable_frame = DoubleScrollableFrame(self)
+        self.scrollable_frame = DoubleScrollableFrame(self, fg_color=self.theme_bg)
         self.scrollable_frame.pack(fill="both", expand=True)
 
-        # Create inner container for entries
-        self.inner_frame = ctk.CTkFrame(self.scrollable_frame.scrollable_frame)
+        # Create inner container for entries with theme colors
+        self.inner_frame = ctk.CTkFrame(self.scrollable_frame.scrollable_frame, fg_color=self.theme_fg)
         self.inner_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
         # Calculate required width for all columns
@@ -212,13 +253,13 @@ class ScrollableMatrixInput(ctk.CTkFrame):
         self.total_width = cols * (entry_width + 2)  # +2 for padding
 
         # Create a container that will force the width
-        self.entries_container = ctk.CTkFrame(self.inner_frame, width=self.total_width)
+        self.entries_container = ctk.CTkFrame(self.inner_frame, width=self.total_width, fg_color=self.theme_fg)
         self.entries_container.pack(fill="y", expand=False)
 
         # Create grid of entries
         for i in range(rows):
             row_entries = []
-            row_frame = ctk.CTkFrame(self.entries_container)
+            row_frame = ctk.CTkFrame(self.entries_container, fg_color=self.theme_fg)
             row_frame.pack(pady=1, anchor="w")
 
             for j in range(cols):
@@ -236,6 +277,32 @@ class ScrollableMatrixInput(ctk.CTkFrame):
 
         # Force update of geometry
         self.update_idletasks()
+
+        # Bind theme change event
+        self.bind("<<ThemeChanged>>", self._on_theme_changed)
+
+    def _get_theme_color(self, color_type="bg"):
+        """Get color based on current theme"""
+        if ctk.get_appearance_mode() == "Dark":
+            return "#2b2b2b" if color_type == "bg" else "#3a3a3a"
+        else:
+            return "#f0f0f0" if color_type == "bg" else "#ffffff"
+
+    def _on_theme_changed(self, event=None):
+        """Update colors when theme changes"""
+        # Update theme colors
+        self.theme_bg = self._get_theme_color("bg")
+        self.theme_fg = self._get_theme_color("fg")
+
+        # Update frame colors
+        self.scrollable_frame.configure(fg_color=self.theme_bg)
+        self.inner_frame.configure(fg_color=self.theme_fg)
+        self.entries_container.configure(fg_color=self.theme_fg)
+
+        # Update all row frames
+        for row_frame in self.entries_container.winfo_children():
+            if isinstance(row_frame, ctk.CTkFrame):
+                row_frame.configure(fg_color=self.theme_fg)
 
 
 class ScrollableMatrixDisplay(ctk.CTkScrollableFrame):
@@ -282,7 +349,14 @@ class ScrollableMatrixDisplay(ctk.CTkScrollableFrame):
             for j in range(self.n):
                 value = self.matrix[i, j]
                 display_value = "0.000" if abs(value) < 1e-10 else f"{value:.4f}"
-                text_color = "#888888" if abs(value) < 1e-10 else "#ffffff"
+
+                # Set text color based on theme
+                if ctk.get_appearance_mode() == "Dark":
+                    text_color = "#888888" if abs(value) < 1e-10 else "#ffffff"
+                    bg_color = "#2b2b2b" if abs(value) < 1e-10 else "#3a3a3a"
+                else:
+                    text_color = "#666666" if abs(value) < 1e-10 else "#000000"
+                    bg_color = "#e0e0e0" if abs(value) < 1e-10 else "#d0d0d0"
 
                 cell = ctk.CTkLabel(
                     row_frame,
@@ -291,7 +365,7 @@ class ScrollableMatrixDisplay(ctk.CTkScrollableFrame):
                     height=cell_height,
                     font=("Consolas", font_size),
                     text_color=text_color,
-                    fg_color="#2b2b2b" if abs(value) < 1e-10 else "#3a3a3a",
+                    fg_color=bg_color,
                     corner_radius=4
                 )
                 cell.grid(row=0, column=j + 1, padx=1)
@@ -304,14 +378,20 @@ class ScrollableMatrixDisplay(ctk.CTkScrollableFrame):
             # Vector value
             b_value = self.vector[i]
             b_display = "0.000" if abs(b_value) < 1e-10 else f"{b_value:.4f}"
+
+            # Set vector background color based on theme
+            if ctk.get_appearance_mode() == "Dark":
+                b_bg_color = "#1e3a5f"
+            else:
+                b_bg_color = "#a0c8ff"
+
             b_cell = ctk.CTkLabel(
                 row_frame,
                 text=b_display,
                 width=cell_width,
                 height=cell_height,
                 font=("Consolas", font_size),
-                text_color="#ffffff",
-                fg_color="#1e3a5f",
+                fg_color=b_bg_color,
                 corner_radius=4
             )
             b_cell.grid(row=0, column=self.n + 2, padx=1)
@@ -324,7 +404,7 @@ class GaussJordanApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Gauss-Jordan Calculator - Professional Edition")
+        self.title("Gauss-Jordan Calculator")
         self.geometry("1400x900")
 
         # Configure grid
@@ -344,6 +424,14 @@ class GaussJordanApp(ctk.CTk):
 
         # UI creation
         self.create_widgets()
+
+        # Bind theme change event
+        self.bind("<<ThemeChanged>>", self._on_theme_changed)
+
+    def _on_theme_changed(self, event=None):
+        """Handle theme changes"""
+        # Update any theme-specific colors here if needed
+        pass
 
     def create_widgets(self):
         # --- TOP CONTROL FRAME ---
@@ -435,7 +523,7 @@ class GaussJordanApp(ctk.CTk):
         welcome_frame.pack(fill="both", expand=True, padx=60, pady=60)
 
         # Title
-        ctk.CTkLabel(welcome_frame, text="Professional Gauss-Jordan Solver",
+        ctk.CTkLabel(welcome_frame, text="Gauss-Jordan Elimination Solver",
                      font=("Consolas", 28, "bold")).pack(pady=40)
 
         # Instructions
